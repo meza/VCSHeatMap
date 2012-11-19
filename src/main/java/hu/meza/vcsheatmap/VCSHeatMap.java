@@ -1,4 +1,4 @@
-package hu.meza;
+package hu.meza.vcsheatmap;
 
 public class VCSHeatMap {
 
