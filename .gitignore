@@ -2,3 +2,4 @@
 target
 *.jar
 *.iml
+atlassian-ide-plugin.xml

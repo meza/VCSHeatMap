@@ -1,63 +1,76 @@
 package hu.meza.vcsheatmap;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class ScoreCalculator {
 
-	private HashMap<String, Integer> score = new HashMap<String, Integer>();
-	private HashMap<String, Set<String>> collaborators = new HashMap<String, Set<String>>();
+    private Map<String, Integer> score = new HashMap<String, Integer>();
+    private Map<String, Set<String>> collaborators = new HashMap<String, Set<String>>();
 
-	public ScoreList getScoreFor(List<HashMap<String, String>> history) {
-		ScoreList result = new ScoreList();
+    public ScoreList getScoreFor(List<Map<String, String>> history) {
 
-		for (HashMap<String, String> changeset : history) {
+        for (Map<String, String> changeset : history) {
+            processChangeset(changeset, score, collaborators);
+        }
 
-			for (Map.Entry<String, String> entry : changeset.entrySet()) {
-				if (score.containsKey(entry.getKey())) {
-					Integer origScore = score.get(entry.getKey());
-					score.put(entry.getKey(), ++origScore);
-				} else {
-					score.put(entry.getKey(), 1);
-				}
+        return endResult(score.entrySet());
+    }
 
-				if (!collaborators.containsKey(entry.getKey())) {
-					collaborators.put(entry.getKey(), new HashSet<String>());
-				}
-				collaborators.get(entry.getKey()).add(entry.getValue());
+    private void processChangeset(Map<String, String> changeset, Map<String, Integer> scoreTable, Map<String, Set<String>> collabs) {
+        for (Map.Entry<String, String> entry : changeset.entrySet()) {
+            updateScoreForFile(entry, scoreTable);
+            addCollaboratorsForFile(entry, collabs);
+        }
+        adjustScoreRegardingCollaborators(changeset, scoreTable, collabs);
+    }
 
-			}
+    private void addCollaboratorsForFile(Map.Entry<String, String> entry, Map<String, Set<String>> collabs) {
+        if (!collabs.containsKey(entry.getKey())) {
+            collabs.put(entry.getKey(), new HashSet<String>());
+        }
+        collabs.get(entry.getKey()).add(entry.getValue());
+    }
 
+    private void updateScoreForFile(Map.Entry<String, String> entry, Map<String, Integer> scoreTable) {
+        if (scoreTable.containsKey(entry.getKey())) {
+            Integer origScore = scoreTable.get(entry.getKey());
+            scoreTable.put(entry.getKey(), ++origScore);
+        } else {
+            scoreTable.put(entry.getKey(), 1);
+        }
+    }
 
-			for (Map.Entry<String, Integer> scoreEntries : score.entrySet()) {
-
-
-				if (!changeset.containsKey(scoreEntries.getKey())) {
-					if (scoreEntries.getValue() <= 1) {
-						score.remove(scoreEntries.getKey());
-					} else {
-						Integer o = scoreEntries.getValue();
-						score.put(scoreEntries.getKey(), --o);
-					}
-				} else {
-					if (collaborators.get(scoreEntries.getKey()).size() > 1) {
-
-						final Integer orig = scoreEntries.getValue();
-						final Integer newx = orig + collaborators.get(scoreEntries.getKey()).size();
-						score.put(scoreEntries.getKey(), newx);
-					}
-				}
-			}
-		}
-
-		populateEndResult(result);
+    private void adjustScoreRegardingCollaborators(Map<String, String> changeset, Map<String, Integer> scoreTable, Map<String, Set<String>> collabs) {
+        for (Map.Entry<String, Integer> scoreEntries : scoreTable.entrySet()) {
 
 
-		return result;
-	}
+            if (!changeset.containsKey(scoreEntries.getKey())) {
+                if (scoreEntries.getValue() <= 1) {
+                    scoreTable.remove(scoreEntries.getKey());
+                } else {
+                    Integer o = scoreEntries.getValue();
+                    scoreTable.put(scoreEntries.getKey(), --o);
+                }
+            } else {
+                if (collabs.get(scoreEntries.getKey()).size() > 1) {
 
-	private void populateEndResult(ScoreList result) {
-		for (Map.Entry<String, Integer> scoreEntries : score.entrySet()) {
-			result.add(scoreEntries.getKey(), scoreEntries.getValue());
-		}
-	}
+                    final Integer orig = scoreEntries.getValue();
+                    final Integer newx = orig + collabs.get(scoreEntries.getKey()).size();
+                    scoreTable.put(scoreEntries.getKey(), newx);
+                }
+            }
+        }
+    }
+
+    private ScoreList endResult(Set<Map.Entry<String, Integer>> entries) {
+        ScoreList result = new ScoreList();
+        for (Map.Entry<String, Integer> scoreEntries : entries) {
+            result.add(scoreEntries.getKey(), scoreEntries.getValue());
+        }
+        return result;
+    }
 }
