@@ -1,11 +1,11 @@
 package hu.meza.vcsheatmap;
 
-import java.util.PriorityQueue;
-import java.util.Queue;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class ScoreList {
 
-    private Queue<ScoreEntry> score = new PriorityQueue<ScoreEntry>();
+    private SortedSet<ScoreEntry> score = new TreeSet<ScoreEntry>(new ScoreEntryComparator());
 
     public void add(String s, Integer integer) {
         score.add(new ScoreEntry(s, integer));
@@ -13,8 +13,16 @@ public class ScoreList {
 
     @Override
     public String toString() {
-        return "ScoreList{" +
-            "score=" + score +
-            '}';
+        return toPlainText();
+    }
+
+    private String toPlainText() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Heatmap:\n");
+
+        for (ScoreEntry e : score) {
+            sb.append(String.format("%d\t%s\n", e.getScore(), e.getFileName()));
+        }
+        return sb.toString();
     }
 }

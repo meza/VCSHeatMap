@@ -14,6 +14,10 @@ public class ScoreEntry implements Comparable {
         return score;
     }
 
+    public String getFileName() {
+        return fileName;
+    }
+
     @Override
     public String toString() {
         return "ScoreEntry{" +

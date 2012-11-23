@@ -5,10 +5,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ScoreCalculator {
 
-    private Map<String, Integer> score = new HashMap<String, Integer>();
+    private Map<String, Integer> score = new ConcurrentHashMap<String, Integer>();
     private Map<String, Set<String>> collaborators = new HashMap<String, Set<String>>();
 
     public ScoreList getScoreFor(List<Map<String, String>> history) {
@@ -25,6 +26,18 @@ public class ScoreCalculator {
             updateScoreForFile(entry, scoreTable);
             addCollaboratorsForFile(entry, collabs);
         }
+
+        for (Map.Entry<String, Integer> scoreEntries : scoreTable.entrySet()) {
+            if (!changeset.containsKey(scoreEntries.getKey())) {
+                if (scoreEntries.getValue() <= 1) {
+                    scoreTable.remove(scoreEntries.getKey());
+                } else {
+                    Integer o = scoreEntries.getValue();
+                    scoreTable.put(scoreEntries.getKey(), --o);
+                }
+            }
+        }
+
         adjustScoreRegardingCollaborators(changeset, scoreTable, collabs);
     }
 
@@ -46,22 +59,10 @@ public class ScoreCalculator {
 
     private void adjustScoreRegardingCollaborators(Map<String, String> changeset, Map<String, Integer> scoreTable, Map<String, Set<String>> collabs) {
         for (Map.Entry<String, Integer> scoreEntries : scoreTable.entrySet()) {
-
-
-            if (!changeset.containsKey(scoreEntries.getKey())) {
-                if (scoreEntries.getValue() <= 1) {
-                    scoreTable.remove(scoreEntries.getKey());
-                } else {
-                    Integer o = scoreEntries.getValue();
-                    scoreTable.put(scoreEntries.getKey(), --o);
-                }
-            } else {
-                if (collabs.get(scoreEntries.getKey()).size() > 1) {
-
-                    final Integer orig = scoreEntries.getValue();
-                    final Integer newx = orig + collabs.get(scoreEntries.getKey()).size();
-                    scoreTable.put(scoreEntries.getKey(), newx);
-                }
+            if (collabs.get(scoreEntries.getKey()).size() > 1) {
+                final Integer orig = scoreEntries.getValue();
+                final Integer newx = orig + collabs.get(scoreEntries.getKey()).size();
+                scoreTable.put(scoreEntries.getKey(), newx);
             }
         }
     }
